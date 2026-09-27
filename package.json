@@ -1,0 +1,29 @@
+{
+  "name": "talentos",
+  "version": "1.0.0",
+  "description": "TalentOS — Human Potential Intelligence Platform",
+  "private": true,
+  "workspaces": [
+    "shared",
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:backend": "npm --prefix backend run build",
+    "build:frontend": "npm --prefix frontend run build",
+    "seed": "npm --prefix backend run seed",
+    "db:push": "npm --prefix backend run db:push",
+    "db:studio": "npm --prefix backend run db:studio"
+  },
+  "keywords": [
+    "human-potential",
+    "intelligence-platform",
+    "recommendation-engine",
+    "hierarchy",
+    "talentos"
+  ],
+  "author": "TalentOS Team",
+  "license": "MIT"
+}

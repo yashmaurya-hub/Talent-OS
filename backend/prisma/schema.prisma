@@ -1,0 +1,274 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id                   String                @id @default(uuid())
+  name                 String
+  type                 String                // SCHOOL, COLLEGE, COMPANY, STARTUP, SPORTS_ACADEMY, CLUB, CUSTOM
+  settings             String?               // JSON string for configurable settings
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+
+  users                User[]
+  hierarchyNodes       HierarchyNode[]
+  capabilityDimensions CapabilityDimension[]
+  skills               Skill[]
+  tasks                Task[]
+  recommendationRuns   RecommendationRun[]
+}
+
+model User {
+  id             String        @id @default(uuid())
+  organizationId String
+  email          String        @unique
+  passwordHash   String
+  role           String        @default("MEMBER") // SUPER_ADMIN, HEAD, MANAGER, MEMBER
+  status         String        @default("ACTIVE") // ACTIVE, INACTIVE, SUSPENDED
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  profile        Profile?
+  createdTasks   Task[]        @relation("TaskCreator")
+}
+
+model HierarchyNode {
+  id             String          @id @default(uuid())
+  organizationId String
+  parentId       String?
+  name           String
+  nodeType       String          // e.g. "BOARD", "DEPARTMENT", "CLASS", "TEAM", "SQUAD"
+  depth          Int             @default(0)
+  path           String          // Materialized path like "/root-id/node-id" for high-performance subtree querying
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  parent         HierarchyNode?  @relation("NodeHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children       HierarchyNode[] @relation("NodeHierarchy")
+  profiles       Profile[]
+
+  @@index([organizationId])
+  @@index([parentId])
+  @@index([path])
+}
+
+model Profile {
+  id              String               @id @default(uuid())
+  userId          String               @unique
+  hierarchyNodeId String
+  firstName       String
+  lastName        String
+  avatarUrl       String?
+  titleRole       String               // e.g. "Senior Teacher", "Lead Engineer", "Striker", "Student"
+  department      String               // e.g. "Science", "Backend Core", "U-18 Team"
+  joinedDate      DateTime             @default(now())
+  contactEmail    String
+  bio             String?
+  status          String               @default("ACTIVE")
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  user            User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hierarchyNode   HierarchyNode        @relation(fields: [hierarchyNodeId], references: [id], onDelete: Restrict)
+  
+  skillRecords       SkillRecord[]
+  performanceRecords PerformanceRecord[]
+  activities         Activity[]
+  achievements       Achievement[]
+  recommendationCandidates RecommendationCandidate[]
+
+  @@index([hierarchyNodeId])
+}
+
+model CapabilityDimension {
+  id             String        @id @default(uuid())
+  organizationId String
+  name           String        // e.g. "Technical Skill", "Communication", "Leadership", "Creativity"
+  weight         Float         @default(1.0)
+  description    String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  skills         Skill[]
+
+  @@unique([organizationId, name])
+}
+
+model Skill {
+  id             String              @id @default(uuid())
+  organizationId String
+  dimensionId    String
+  name           String              // e.g. "Mathematics", "Python", "Public Speaking", "Tactical Vision"
+  category       String              // e.g. "CORE", "SOFT_SKILL", "DOMAIN", "SPECIALIZED"
+  createdAt      DateTime            @default(now())
+
+  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  dimension      CapabilityDimension @relation(fields: [dimensionId], references: [id], onDelete: Cascade)
+  records        SkillRecord[]
+
+  @@unique([organizationId, name])
+  @@index([dimensionId])
+}
+
+model SkillRecord {
+  id               String       @id @default(uuid())
+  profileId        String
+  skillId          String
+  proficiencyScore Float        // Normalized 0 - 100
+  verifiedBy       String?      // Verifier name or ID
+  lastAssessedAt   DateTime     @default(now())
+
+  profile          Profile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  skill            Skill        @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, skillId])
+  @@index([profileId])
+  @@index([skillId])
+}
+
+model PerformanceRecord {
+  id           String       @id @default(uuid())
+  profileId    String
+  category     String       // ACADEMIC, KPI, PROJECT, MATCH, TEST
+  title        String       // e.g. "Midterm Physics Exam", "Q2 Sprint Delivery", "State Championship Match"
+  scoreValue   Float        // Normalized 0 - 100
+  gradeLetter  String?      // e.g. "A+", "Exceeds Expectations"
+  recordedDate DateTime
+  notes        String?
+  createdAt    DateTime     @default(now())
+
+  profile      Profile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId])
+  @@index([category])
+  @@index([recordedDate])
+}
+
+model Activity {
+  id                String       @id @default(uuid())
+  profileId         String
+  name              String       // e.g. "Inter-School Science Olympiad", "Fintech Hackathon 2025"
+  category          String       // COMPETITION, HACKATHON, CULTURAL, SPORTS, VOLUNTEERING, CERTIFICATION
+  role              String       // e.g. "Lead Presenter", "Solo Participant", "Captain", "Organizer"
+  result            String?      // e.g. "1st Place Gold", "Finalist", "Completed with Distinction"
+  performanceRating Float?       // 0 - 100
+  date              DateTime
+  description       String?
+  createdAt         DateTime     @default(now())
+
+  profile           Profile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId])
+  @@index([category])
+}
+
+model Achievement {
+  id          String       @id @default(uuid())
+  profileId   String
+  title       String       // e.g. "National Science Talent Trophy", "Engineer of the Quarter"
+  category    String       // ACADEMIC, TECHNICAL, LEADERSHIP, SPORTS, INNOVATION
+  level       String       // INTERNAL, REGIONAL, STATE, NATIONAL, INTERNATIONAL
+  date        DateTime
+  description String?
+  evidenceUrl String?
+  createdAt   DateTime     @default(now())
+
+  profile     Profile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId])
+}
+
+model Task {
+  id             String            @id @default(uuid())
+  organizationId String
+  createdById    String
+  title          String            // e.g. "State Science Quiz Championship", "Fintech Enterprise Keynote"
+  description    String
+  category       String            // e.g. "COMPETITION", "PRESENTATION", "PROJECT_LEAD", "EVENT_REPRESENTATION"
+  targetDate     DateTime?
+  status         String            @default("OPEN") // DRAFT, OPEN, RECOMMENDED, ASSIGNED, COMPLETED
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  creator        User              @relation("TaskCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  requirements   TaskRequirement[]
+  recommendationRuns RecommendationRun[]
+
+  @@index([organizationId])
+  @@index([createdById])
+}
+
+model TaskRequirement {
+  id              String       @id @default(uuid())
+  taskId          String
+  requirementType String       // SKILL, DIMENSION, MIN_PERFORMANCE, EXPERIENCE, ACTIVITY_CATEGORY
+  targetName      String       // Name of skill, dimension, or activity category
+  minScore        Float        // Minimum threshold or baseline required
+  weight          Float        @default(5.0) // 1.0 to 10.0 scale for importance
+  importance      String       @default("REQUIRED") // REQUIRED, PREFERRED, BONUS
+
+  task            Task         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+}
+
+model RecommendationRun {
+  id                    String                    @id @default(uuid())
+  taskId                String
+  organizationId        String
+  runAt                 DateTime                  @default(now())
+  naturalLanguageQuery  String?
+  filtersApplied        String?                   // JSON string of filters
+  methodologyNotes      String?
+
+  task                  Task                      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  organization          Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  candidates            RecommendationCandidate[]
+
+  @@index([taskId])
+  @@index([organizationId])
+}
+
+model RecommendationCandidate {
+  id                  String                   @id @default(uuid())
+  recommendationRunId String
+  profileId           String
+  rank                Int
+  suitabilityScore    Float                    // 0 - 100
+  matchPercentage     Float                    // 0 - 100
+  aiExplanation       String?
+  missingDataNotes    String?                  // JSON string of missing fields
+  strengthsSummary    String?                  // JSON string of detected strengths
+  growthAreasSummary  String?                  // JSON string of development areas
+  createdAt           DateTime                 @default(now())
+
+  recommendationRun   RecommendationRun        @relation(fields: [recommendationRunId], references: [id], onDelete: Cascade)
+  profile             Profile                  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  evidenceList        RecommendationEvidence[]
+
+  @@index([recommendationRunId])
+  @@index([profileId])
+}
+
+model RecommendationEvidence {
+  id                  String                  @id @default(uuid())
+  candidateId         String
+  factorName          String                  // e.g. "Mathematics Proficiency", "Prior Quiz Track Record"
+  factorScore         Float
+  weight              Float
+  rawEvidenceSummary  String                  // Concrete database citation, e.g. "Scored 92% in Term 2 Science Exam"
+  recordSource        String?                 // Reference to table and ID e.g. "PerformanceRecord:uuid"
+
+  candidate           RecommendationCandidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId])
+}
