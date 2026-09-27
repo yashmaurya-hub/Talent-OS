@@ -6,6 +6,8 @@ import { PrismaClient } from '@prisma/client';
 import authRoutes from './routes/auth.routes';
 import hierarchyRoutes from './routes/hierarchy.routes';
 import profileRoutes from './routes/profile.routes';
+import taskRoutes from './routes/task.routes';
+import analyticsRoutes from './routes/analytics.routes';
 
 dotenv.config();
 
@@ -23,6 +25,8 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/hierarchy', hierarchyRoutes);
 app.use('/api/profiles', profileRoutes);
+app.use('/api/tasks', taskRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Root & Health check
 app.get('/api/health', async (_req, res) => {
@@ -32,6 +36,7 @@ app.get('/api/health', async (_req, res) => {
     const taskCount = await prisma.task.count();
     const profileCount = await prisma.profile.count();
     const recordsCount = await prisma.performanceRecord.count();
+    const recRunCount = await prisma.recommendationRun.count();
 
     res.json({
       status: 'healthy',
@@ -46,6 +51,7 @@ app.get('/api/health', async (_req, res) => {
           profiles: profileCount,
           performanceRecords: recordsCount,
           tasks: taskCount,
+          recommendationRuns: recRunCount,
         },
       },
     });
