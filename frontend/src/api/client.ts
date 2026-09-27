@@ -77,6 +77,8 @@ export const api = {
       request<any>('/tasks', { method: 'POST', body: JSON.stringify(task) }),
     recommend: (taskId: string) =>
       request<any>(`/tasks/${taskId}/recommend`, { method: 'POST' }),
+    nlpQuery: (query: string) =>
+      request<any>('/tasks/nl-query', { method: 'POST', body: JSON.stringify({ query }) }),
   },
 
   analytics: {
