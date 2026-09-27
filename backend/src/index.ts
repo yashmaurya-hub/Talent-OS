@@ -3,6 +3,10 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
 
+import authRoutes from './routes/auth.routes';
+import hierarchyRoutes from './routes/hierarchy.routes';
+import profileRoutes from './routes/profile.routes';
+
 dotenv.config();
 
 const app = express();
@@ -15,12 +19,19 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// API Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/hierarchy', hierarchyRoutes);
+app.use('/api/profiles', profileRoutes);
+
 // Root & Health check
 app.get('/api/health', async (_req, res) => {
   try {
     const orgCount = await prisma.organization.count();
     const userCount = await prisma.user.count();
     const taskCount = await prisma.task.count();
+    const profileCount = await prisma.profile.count();
+    const recordsCount = await prisma.performanceRecord.count();
 
     res.json({
       status: 'healthy',
@@ -32,6 +43,8 @@ app.get('/api/health', async (_req, res) => {
         stats: {
           organizations: orgCount,
           users: userCount,
+          profiles: profileCount,
+          performanceRecords: recordsCount,
           tasks: taskCount,
         },
       },
@@ -52,9 +65,9 @@ app.use('/api/*', (_req, res) => {
   res.status(404).json({ error: 'Endpoint not found' });
 });
 
-// Centralized error handler (prevents leaking internal stack traces to users)
+// Centralized error handler
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  console.error('Unhandled error:', err);
+  console.error('Unhandled server error:', err);
   res.status(err.status || 500).json({
     error: err.message || 'An internal server error occurred',
   });
@@ -74,6 +87,8 @@ async function startServer() {
   }
 }
 
-startServer();
+if (process.env.NODE_ENV !== 'test') {
+  startServer();
+}
 
 export { app, prisma };
