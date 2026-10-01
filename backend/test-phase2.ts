@@ -1,13 +1,6 @@
-import { app } from './src/index';
-import http from 'http';
-
 async function runTests() {
   console.log('🧪 Starting Phase 2 API automated verification...');
-  
-  // Start server on temporary port
-  const server = http.createServer(app);
-  await new Promise<void>((resolve) => server.listen(5099, resolve));
-  const baseUrl = 'http://localhost:5099/api';
+  const baseUrl = 'http://localhost:5000/api';
 
   try {
     // 1. Health endpoint test
@@ -76,7 +69,6 @@ async function runTests() {
     console.error('❌ Test failed:', err);
     process.exit(1);
   } finally {
-    server.close();
     process.exit(0);
   }
 }

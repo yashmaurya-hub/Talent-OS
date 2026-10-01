@@ -99,7 +99,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ profileId, onClose, 
         <div className="bg-gradient-to-r from-indigo-900/60 via-slate-800 to-slate-900 p-6 border-b border-slate-700/60 flex items-start justify-between">
           <div className="flex items-center space-x-4">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-xl font-black text-white shadow-xl shadow-indigo-500/20 border border-indigo-400/30">
-              {profile ? `${profile.firstName[0]}${profile.lastName[0]}` : <User />}
+              {profile ? `${profile.firstName?.[0] || ''}${profile.lastName?.[0] || ''}` : <User />}
             </div>
             <div>
               <div className="flex items-center space-x-3">

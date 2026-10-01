@@ -172,7 +172,7 @@ export const PeoplePage: React.FC = () => {
                 <div className="flex items-start justify-between">
                   <div className="flex items-center space-x-3">
                     <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center font-bold text-sm text-white shadow-md shadow-indigo-500/10">
-                      {p.firstName[0]}{p.lastName[0]}
+                      {(p.firstName?.[0] || 'U')}{(p.lastName?.[0] || 'M')}
                     </div>
                     <div>
                       <h3 className="font-bold text-sm text-white group-hover:text-indigo-400 transition-colors">

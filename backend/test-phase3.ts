@@ -1,12 +1,6 @@
-import { app, prisma } from './src/index';
-import http from 'http';
-
 async function runTests() {
   console.log('🧪 Starting Phase 3 Recommendation Engine & Analytics verification...');
-
-  const server = http.createServer(app);
-  await new Promise<void>((resolve) => server.listen(5098, resolve));
-  const baseUrl = 'http://localhost:5098/api';
+  const baseUrl = 'http://localhost:5000/api';
 
   try {
     // 1. Login as Principal
@@ -106,8 +100,6 @@ async function runTests() {
     console.error('❌ Phase 3 test failed:', err);
     process.exit(1);
   } finally {
-    server.close();
-    await prisma.$disconnect();
     process.exit(0);
   }
 }

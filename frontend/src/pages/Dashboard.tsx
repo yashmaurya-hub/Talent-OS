@@ -33,7 +33,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setActiveTab }) => {
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
 
   useEffect(() => {
-    setIsLoading(false);
+    setIsLoading(true);
     api.analytics.getOverview()
       .then((res) => setData(res))
       .catch((err) => console.error('Failed to load overview:', err))
